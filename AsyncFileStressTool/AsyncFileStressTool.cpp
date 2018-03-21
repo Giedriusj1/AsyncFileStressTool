@@ -2,14 +2,15 @@
 
 #include "stdafx.h"
 #include "ReadDirectoryChanges.h"
+#include <string>
 #include <random>
 
 
 // Number of file operations that each thread should attempt:
-int file_operation_num = 10;
+int file_operation_num = 5;
 
 // Sleep in ms
-const int sleep_after_each_operation = 100;
+int sleep_after_each_operation = 100;
 
 const DWORD event_notify_filter =
 	  FILE_NOTIFY_CHANGE_LAST_WRITE
@@ -26,14 +27,18 @@ void get_file_attributes(std::wstring* path, int iteration);
 void lock_file_range(std::wstring* path, int iteration);
 void get_file_type(std::wstring* path, int iteration);
 void get_binary_type(std::wstring* path, int iteration);
-
+void open_sleep_close(std::wstring* path, int iteration);
+	
 // Array of functions that will be called on file:
-void(*file_ops[])(std::wstring*, int) = { read_from_beginning,
-										  read_from_end,
-										  get_file_attributes,
-										  lock_file_range,
-										  get_file_type,
-										  get_binary_type };
+void(*file_ops[])(std::wstring*, int) = {
+	read_from_beginning,
+	read_from_end,
+	get_file_attributes,
+	// lock_file_range,
+	get_file_type,
+	get_binary_type,
+	open_sleep_close
+};
 
 const int file_ops_count = sizeof(file_ops) / sizeof(file_ops[0]);
 
@@ -67,7 +72,19 @@ int wmain(int argc, wchar_t *argv[], wchar_t *envp[])
 		exit(1);
 	}
 	std::wstring monitor_path(argv[1]);
-	wprintf(L"Monitoring path: %s", monitor_path.c_str());
+	wprintf(L"Monitoring path: %s \n", monitor_path.c_str());
+
+	if (argc >= 3) {
+		file_operation_num = std::stoi(argv[2]);
+	}
+	
+	wprintf(L"Each thread will do %i operations \n", file_operation_num);
+
+	if (argc >= 4) {
+		sleep_after_each_operation = std::stoi(argv[3]);
+	}
+
+	wprintf(L"Thread will sleep for %i ms after each operation \n", sleep_after_each_operation);
 
 
 	CReadDirectoryChanges changes;
